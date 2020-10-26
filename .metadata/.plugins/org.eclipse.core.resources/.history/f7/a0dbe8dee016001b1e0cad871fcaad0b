@@ -1,0 +1,22 @@
+spring:
+  h2:
+    console:
+      path: ${h2.console.path:/h2}
+      settings:
+        web-allow-others: true
+  application:
+      name: orderms      
+        
+  datasource:
+    url: jdbc:h2:mem:orderDb;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  jpa:
+    show-sql: true
+
+
+
+server:
+  port: 9001
+    

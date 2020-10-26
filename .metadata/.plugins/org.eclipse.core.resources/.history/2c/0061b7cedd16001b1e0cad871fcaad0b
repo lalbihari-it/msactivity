@@ -1,0 +1,56 @@
+/**
+ * 
+ */
+package com.ibm.vicky.login.service;
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.ibm.vicky.login.service.filter.UserRepo;
+import com.ibm.vicky.login.service.model.AuthenticationRequest;
+import com.ibm.vicky.login.service.model.UserData;
+import com.ibm.vicky.login.service.model.UserRequest;
+
+import java.util.ArrayList;
+
+/**
+ * @author AkratiBadgaiyan
+ *
+ */
+@Service
+public class UserDetailService implements UserDetailsService  {
+
+	@Autowired
+	private UserRepo repo;
+	
+	@Autowired
+	private PasswordEncoder bcryptEncoder;
+
+
+	    @Override
+	    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+	        //return new User("admin", "admin",new ArrayList<>());
+	    	
+	    	UserData user = repo.findByUserName(username);
+			if (user == null) {
+				throw new UsernameNotFoundException("User not found with username: " + username);
+			}
+			return new org.springframework.security.core.userdetails.User(user.getUserName(), user.getPassword(),
+					new ArrayList<>());
+	    }
+	    
+	    
+	    public UserData save(UserRequest user) {
+			UserData userData = new UserData();
+			userData.setUserName(user.getUserName());
+			userData.setPassword(bcryptEncoder.encode(user.getPassword()));
+			return repo.save(userData);
+		}
+}
+

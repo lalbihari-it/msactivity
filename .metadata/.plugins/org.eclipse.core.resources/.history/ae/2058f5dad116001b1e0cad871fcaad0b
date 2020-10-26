@@ -1,0 +1,119 @@
+package com.ibm.vicky.currency.service.service;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.ibm.vicky.currency.service.model.CurrencyConversion;
+import com.netflix.appinfo.InstanceInfo;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+
+@Service
+public class CurrencyConversionService {
+	
+	@Autowired
+	CurrencyConversionFeignClient fiegnClient;
+	
+	@Autowired
+	DiscoveryClient discoveryClient;
+	
+	@Autowired
+	LoadBalancerClient lbClient;
+	
+
+	@Autowired
+	RestTemplate lbRestTemplate;
+	
+	@Bean	  
+	  @LoadBalanced 
+	  RestTemplate getRestTemplate() 
+	  { 
+		  return new RestTemplate(); 
+	  }
+	 
+	public BigDecimal calcCurrencyConversionV1(CurrencyConversion cc) {
+		
+		String url="http://localhost:8080/cf/get/{countryCode}";
+		
+		RestTemplate template = new RestTemplate();
+		HttpEntity<String> reqEntity = new HttpEntity<String>(cc.getCountryCode());
+		ResponseEntity<Double> conversionFactor = template.exchange(url, HttpMethod.GET, reqEntity, Double.class,cc.getCountryCode());
+		return convertAmount(conversionFactor.getBody(),cc.getAmount());
+	}
+	
+	//Eureka Discovery Client
+	
+	public BigDecimal calcCurrencyConversionV2(CurrencyConversion cc) {
+		
+		List<ServiceInstance> instances = discoveryClient.getInstances("currency-conversion-factor");
+		
+		System.out.println("Number of instances: " + instances.size());
+		
+		ServiceInstance instance = instances.get(0);				
+		String url = "http://" + instance.getHost() + ":" + instance.getPort() + "/currency-factor/get/{countryCode}";
+		
+		System.out.println("URL is  " + url);
+		
+		RestTemplate template = new RestTemplate();
+		HttpEntity<String> reqEntity = new HttpEntity<String>(cc.getCountryCode());
+		ResponseEntity<Double> conversionFactor = template.exchange(url, HttpMethod.GET, reqEntity, Double.class,cc.getCountryCode());
+		return convertAmount(conversionFactor.getBody(),cc.getAmount());
+	}
+	
+	//Fiegn Client
+	public BigDecimal calcCurrencyConversionV3(com.ibm.vicky.currency.service.model.CurrencyConversion cc) {	
+		Double conversionFactor = fiegnClient.calcCurrencyConversion(cc.getCountryCode());		
+		return convertAmount(conversionFactor,cc.getAmount());
+		
+	}
+	
+	//Load Balancer
+	
+		public BigDecimal calcCurrencyConversionV4(CurrencyConversion cc) {
+			
+			ServiceInstance instance = lbClient.choose("currency-conversion-factor");			
+			String url = "http://" + instance.getHost() + ":" + instance.getPort() + "/currency-factor/get/{countryCode}";
+			RestTemplate template = new RestTemplate();
+			HttpEntity<String> reqEntity = new HttpEntity<String>(cc.getCountryCode());
+			ResponseEntity<Double> conversionFactor = template.exchange(url, HttpMethod.GET, reqEntity, Double.class,cc.getCountryCode());
+			return convertAmount(conversionFactor.getBody(),cc.getAmount());
+		}
+		//Load Balancer - REST template
+		public BigDecimal calcCurrencyConversionV5(CurrencyConversion cc) {
+			
+			String url="http://currency-conversion-factor/currency-factor/get/{countryCode}";	
+			HttpEntity<String> reqEntity = new HttpEntity<String>(cc.getCountryCode());
+			ResponseEntity<Double> conversionFactor = lbRestTemplate.exchange(url, HttpMethod.GET, reqEntity, Double.class,cc.getCountryCode());
+			return convertAmount(conversionFactor.getBody(),cc.getAmount());
+		}
+		//Hystrix Circuit Breaker
+		@HystrixCommand(fallbackMethod = "calculateFallback")
+		public BigDecimal calcCurrencyConversionV6(CurrencyConversion cc) {	
+			Double conversionFactor = fiegnClient.calcCurrencyConversion(cc.getCountryCode());		
+			return convertAmount(conversionFactor,cc.getAmount());
+			
+		}
+		
+		private BigDecimal calculateFallback(CurrencyConversion cc) {
+			
+			return BigDecimal.ZERO;
+		}
+	
+	public BigDecimal convertAmount(Double conversionFactor,BigDecimal amount) {	
+		BigDecimal convertedAmount = new BigDecimal ( conversionFactor).multiply(amount);
+		System.out.println("convertedAmount:"+convertedAmount);
+		return convertedAmount;
+	}
+	
+}

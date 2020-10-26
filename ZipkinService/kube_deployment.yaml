@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sleuth-zipkin-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sleuth-zipkin-service
+  template:
+    metadata:
+      labels:
+        app: sleuth-zipkin-service
+    spec:
+      containers:
+      - name: springbootproject
+        image: us.icr.io/springappnamespace/sleuth-zipkin-service
+        env:
+        - name: SERVER_PORT
+          value: "9411"
+        ports:
+        - containerPort: 9411

@@ -1,0 +1,42 @@
+/**
+ * 
+ */
+package com.springboot.ms;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.springboot.ms.repo.OrderData;
+import com.springboot.ms.repo.OrderRepo;
+
+/**
+ * @author AkratiBadgaiyan
+ *
+ */
+@Service
+public class OrderService {
+	
+	@Autowired
+	private OrderRepo repo;
+
+	
+	
+	public boolean saveData(String orderDetails, String userName, String authToken, String txnToken) {
+		repo.save(new OrderData(orderDetails,authToken,txnToken,"Success"));
+	
+		return true;
+	}
+
+
+
+	public boolean saveOrderData(UserRequest user) {
+		repo.save(new OrderData(user.getOrderDetails(),user.getAuthToken(),user.getTransactionToken(),"Success"));
+		
+		return true;
+	}
+
+
+
+	
+
+}

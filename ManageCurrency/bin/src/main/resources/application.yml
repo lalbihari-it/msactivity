@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: currency-conversion-factor
+  mvc:
+    view:
+      suffix: .html
+      prefix: /
+  h2:
+    console:
+      enabled: true
+      path: /h2
+      settings:
+        web-allow-others: true
+  datasource:
+    url: ${datasource.url}
+    username: ${datasource.username}
+    password: ${datasource.password}
+    driver-class-name: ${datasource.driver:org.h2.Driver}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        show_sql: true
+        ddl-auto: create-drop
+        
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+        
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${random.int}
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      #defaultZone: ${eureka.uri:http://192.168.99.100:8761/eureka}  
+      defaultZone: http://localhost:8761/eureka
+      
+feign:
+  hystrix:
+    enabled: true
+server:
+  #port: 8080
+  port: 0

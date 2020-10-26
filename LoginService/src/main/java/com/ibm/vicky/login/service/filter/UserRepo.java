@@ -1,0 +1,13 @@
+package com.ibm.vicky.login.service.filter;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.ibm.vicky.login.service.model.UserData;
+
+@Repository
+public interface UserRepo extends JpaRepository<UserData, Long>{
+	
+	UserData findByUserName(String username);
+	
+}

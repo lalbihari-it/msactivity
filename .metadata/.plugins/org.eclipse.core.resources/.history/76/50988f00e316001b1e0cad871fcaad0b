@@ -1,0 +1,31 @@
+/**
+ * 
+ */
+package com.ibm.vicky.login.service.filter;
+
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.ibm.vicky.login.service.model.UserRequest;
+
+
+@FeignClient(name = "orderms", url = "http://localhost:9008", fallback = OrderFeignFallback.class)
+public interface OrderFeignProxy {
+	
+	@GetMapping("/saveOrder/{orderDetails}/{authToken}/{transToken}/{userName}")
+	public String saveOrder(@PathVariable String orderDetails,
+													@PathVariable String authToken,
+													@PathVariable String transToken,
+													@PathVariable String userName);
+		
+	
+	@RequestMapping(value = "/saveOrderData", method = RequestMethod.POST)
+	public String saveOrderData(@RequestBody UserRequest user);
+	
+	
+}
+
